@@ -60,7 +60,9 @@
   .heater-input{width:100%;text-align:left;margin-top:8px;}
   .cost-row{gap:8px;}
   .cost-row>span:first-child{flex:1;font-size:15px;color:var(--w80);font-weight:500;}
-  .cost-val{width:100px;flex:0 0 100px;}
+  .cost-val{width:90px;flex:0 0 90px;}
+  .cost-date{width:118px;flex:0 0 118px;padding:10px 6px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.15);font-size:12px;font-weight:600;outline:none;background:rgba(0,0,0,0.25);color:var(--white);color-scheme:dark;}
+  @media (max-width:400px){.cost-row{flex-wrap:wrap;}.cost-row>span:first-child{flex:1 0 100%;padding-bottom:6px;}.cost-date{flex:1 1 auto;}}
   .cost-unit{font-size:13px;color:var(--w50);width:28px;flex:0 0 28px;font-weight:600;text-align:left;}
   .bar-wrap{margin-bottom:16px;}
   .bar-track{height:12px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;}
@@ -152,9 +154,9 @@
     <div class="tab-panel" id="panel-costs">
       <div class="card">
         <div class="card-title">💸 Unos troškova</div>
-        <div class="cost-row"><span>E-cigarete</span><input type="number" class="cost-val" id="c-hardware" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
-        <div class="cost-row"><span>Cigarete</span><input type="number" class="cost-val" id="c-liquids" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
-        <div class="cost-row"><span>Potrošeno tekućine</span><input type="number" class="cost-val" id="c-ml" step="0.1" value="0.0" oninput="saveData()"/><span class="cost-unit">ml</span></div>
+        <div class="cost-row"><span>E-cigarete</span><input type="date" class="cost-date" id="c-hardware-date" oninput="saveData()"/><input type="number" class="cost-val" id="c-hardware" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
+        <div class="cost-row"><span>Cigarete</span><input type="date" class="cost-date" id="c-liquids-date" oninput="saveData()"/><input type="number" class="cost-val" id="c-liquids" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
+        <div class="cost-row"><span>Potrošeno tekućine</span><input type="date" class="cost-date" id="c-ml-date" oninput="saveData()"/><input type="number" class="cost-val" id="c-ml" step="0.1" value="0.0" oninput="saveData()"/><span class="cost-unit">ml</span></div>
       </div>
     </div>
 
@@ -210,7 +212,7 @@ const STORAGE_KEY = "esmoker-data";
 const defaults = () => ({
   start: new Date().toISOString().slice(0, 10),
   cigsDay: 20, cigsPack: 20, packPrice: 5, heaterLimit: 120, heaterLimit2: 140,
-  hardware: 0, liquids: 0, ml: 0, heaters: []
+  hardware: 0, liquids: 0, ml: 0, hardwareDate: "", liquidsDate: "", mlDate: "", heaters: []
 });
 let data = defaults(), user = null, db = null, firebaseReady = false, saveTimer = null;
 
@@ -229,11 +231,13 @@ function readInputs() {
   data.cigsDay = num("s-cigs-day"); data.cigsPack = Math.max(1, num("s-cigs-pack"));
   data.packPrice = num("s-pack-price"); data.heaterLimit = Math.max(1, num("s-heater-limit")); data.heaterLimit2 = Math.max(data.heaterLimit, num("s-heater-limit2"));
   data.hardware = num("c-hardware"); data.liquids = num("c-liquids"); data.ml = num("c-ml");
+  data.hardwareDate = $("c-hardware-date").value; data.liquidsDate = $("c-liquids-date").value; data.mlDate = $("c-ml-date").value;
 }
 function writeInputs() {
   $("s-start").value = data.start; $("s-cigs-day").value = data.cigsDay; $("s-cigs-pack").value = data.cigsPack;
   $("s-pack-price").value = data.packPrice; $("s-heater-limit").value = data.heaterLimit; $("s-heater-limit2").value = data.heaterLimit2;
   $("c-hardware").value = data.hardware; $("c-liquids").value = data.liquids; $("c-ml").value = data.ml;
+  $("c-hardware-date").value = data.hardwareDate || ""; $("c-liquids-date").value = data.liquidsDate || ""; $("c-ml-date").value = data.mlDate || "";
   renderHeaters();
 }
 function saveData() {
