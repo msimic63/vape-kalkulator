@@ -3,413 +3,141 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-<meta name="theme-color" content="#071640"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="E-Smoker"/>
-<link rel="manifest" href="manifest.json"/>
-<link rel="apple-touch-icon" href="icon-192.png"/>
-<title>E-Smoker Kalkulator</title>
+<meta name="theme-color" content="#030c24"/>
+<title>E-Smoker Pro</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   :root{
-    --bg:#071640;--bgMid:#0a2d6e;--card:#0f4393;--cardLight:#1254a8;
-    --accent:#1565c0;--accentDim:#4a90d9;
-    --border:rgba(100,160,220,0.25);--borderBright:rgba(100,160,220,0.5);
-    --white:#fff;--w80:rgba(255,255,255,0.8);--w50:rgba(255,255,255,0.5);--w30:rgba(255,255,255,0.3);
-    --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+    --bg:#030c24;
+    --bgGradient:linear-gradient(180deg, #051336 0%, #020819 100%);
+    --card:rgba(15, 67, 147, 0.25);
+    --cardLight:rgba(21, 101, 192, 0.35);
+    --cardBorder:rgba(255, 255, 255, 0.08);
+    --accent:#00d2ff;
+    --accentGradient:linear-gradient(135deg, #00d2ff 0%, #0066ff 100%);
+    --white:#ffffff;
+    --w80:rgba(255,255,255,0.8);
+    --w50:rgba(255,255,255,0.5);
   }
-  html,body{height:100%;background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:var(--white);-webkit-tap-highlight-color:transparent;overflow:hidden;}
-  .app{height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:520px;margin:0 auto;}
-  .header{background:linear-gradient(135deg,#071a4a,var(--bg));padding:calc(14px + var(--safe-top)) 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;justify-content:space-between;align-items:center;}
-  .header-left{flex:1;}
-  .header-date{font-size:10px;letter-spacing:3px;color:var(--white);text-transform:uppercase;margin-bottom:3px;}
-  .header h1{font-size:20px;font-weight:900;color:var(--white);}
-
-  /* Gumb prijave: uvijek aktivan, nikad disabled/pointer-events:none */
-  .auth-btn{background:rgba(255,255,255,0.1);border:1px solid var(--borderBright);color:var(--white);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background 0.2s;pointer-events:auto;user-select:none;-webkit-user-select:none;}
-  .auth-btn:hover{background:rgba(255,255,255,0.2);}
-  .auth-btn:focus-visible{outline:2px solid #7ec8f7;outline-offset:2px;}
-  .user-avatar{width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--white);}
-
-  /* Tabovi: uvijek klikabilni, neovisno o prijavi */
-  .tabs{background:linear-gradient(90deg,#0a2055,#0d47a1);border-bottom:1px solid var(--border);display:flex;flex-shrink:0;position:sticky;top:0;z-index:10;pointer-events:auto;}
-  .tab-btn{flex:1;padding:12px 2px 9px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--w50);border-bottom:3px solid transparent;transition:all 0.18s;pointer-events:auto;user-select:none;-webkit-user-select:none;}
-  .tab-btn.active{color:var(--white);border-bottom-color:var(--accentDim);background:rgba(66,165,245,0.12);}
-  .tab-btn:focus-visible{outline:2px solid #7ec8f7;outline-offset:-2px;}
-  .tab-icon{font-size:16px;display:block;margin-bottom:2px;}
-  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px calc(14px + var(--safe-bottom));}
+  html,body{height:100%;background:var(--bg);background:var(--bgGradient);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--white);-webkit-tap-highlight-color:transparent;}
+  .app{max-width:540px;margin:0 auto;background:rgba(3, 12, 36, 0.4);min-height:100vh;display:flex;flex-direction:column;box-shadow:0 0 40px rgba(0,0,0,0.6);border-left:1px solid var(--cardBorder);border-right:1px solid var(--cardBorder);}
+  .header{padding:20px 24px 14px;display:flex;justify-content:space-between;align-items:center;background:rgba(5, 19, 54, 0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--cardBorder);}
+  .header-left-wrap{display:flex;align-items:center;gap:12px;}
+  .app-logo{width:36px;height:36px;flex-shrink:0;}
+  .header-date{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;margin-bottom:2px;}
+  .header h1{font-size:22px;font-weight:800;letter-spacing:-0.5px;}
+  .auth-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:var(--white);padding:8px 16px;border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s ease;}
+  .tabs{background:rgba(5, 19, 54, 0.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--cardBorder);display:flex;position:sticky;top:0;z-index:10;}
+  .tab-btn{flex:1;padding:14px 2px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--w50);display:flex;flex-direction:column;align-items:center;gap:4px;border-bottom:3px solid transparent;transition:all 0.2s ease;}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(0, 210, 255, 0.05);}
+  .content{flex:1;padding:20px;overflow-y:auto;}
   .tab-panel{display:none;}.tab-panel.active{display:block;}
-
-  .card{background:linear-gradient(145deg,var(--card),var(--cardLight));border:1px solid var(--border);border-radius:18px;padding:16px 18px;margin-bottom:12px;}
-  .card-title{font-size:15px;font-weight:800;color:var(--white);margin-bottom:14px;}
-  .hero{background:linear-gradient(135deg,#071a4a,#0d47a1);border:1px solid var(--borderBright);border-radius:20px;padding:22px 20px;margin-bottom:12px;box-shadow:0 8px 32px rgba(13,71,161,0.5);}
-  .hero-label{font-size:10px;letter-spacing:2px;color:var(--w50);text-transform:uppercase;}
-  .hero-amount{font-size:42px;font-weight:900;letter-spacing:-2px;color:#7ec8f7;margin:4px 0 2px;line-height:1;}
-  .hero-sub{font-size:13px;color:var(--w80);}
-
-  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-  .stat-card{background:linear-gradient(135deg,#1565c0,#0d47a1);border:1px solid var(--border);border-radius:14px;padding:12px 14px;}
-  .stat-card.accent{border-color:var(--accentDim);}
-  .stat-label{font-size:9px;color:var(--w50);font-weight:700;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:5px;}
-  .stat-value{font-size:20px;font-weight:900;color:var(--white);line-height:1;}
-  .stat-card.accent .stat-value{color:#7ec8f7;}
-
-  .row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:14px;}
+  .card{background:var(--card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--cardBorder);border-radius:24px;padding:20px;margin-bottom:16px;}
+  .card-title{font-size:16px;font-weight:700;color:var(--white);margin-bottom:14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:8px;}
+  .hero{background:var(--accentGradient);border-radius:26px;padding:26px 22px;margin-bottom:16px;box-shadow:0 12px 40px rgba(0, 210, 255, 0.25);}
+  .hero-label{font-size:11px;letter-spacing:1.5px;color:rgba(255,255,255,0.75);text-transform:uppercase;font-weight:700;}
+  .hero-amount{font-size:44px;font-weight:900;letter-spacing:-1.5px;color:var(--white);margin:4px 0;line-height:1;}
+  .hero-sub{font-size:14px;color:rgba(255,255,255,0.9);font-weight:500;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+  .stat-card{background:rgba(255,255,255,0.03);border:1px solid var(--cardBorder);border-radius:18px;padding:16px;}
+  .stat-label{font-size:11px;color:var(--w50);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px;}
+  .stat-value{font-size:19px;font-weight:800;color:var(--white);line-height:1;}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:15px;}
   .row:last-child{border-bottom:none;}
   .row-label{color:var(--w80);font-weight:500;}
-  .row-value{font-weight:800;color:var(--white);}
-  .row-value.hl{color:#7ec8f7;}
-
-  .input-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
-  .input-row:last-child{border-bottom:none;}
-  .input-label{font-size:14px;color:var(--w80);font-weight:500;flex:1;padding-right:8px;}
-  .input-field{width:150px;padding:8px 10px;border-radius:10px;border:1.5px solid var(--borderBright);font-size:14px;font-weight:700;text-align:right;outline:none;background:rgba(255,255,255,0.12);color:var(--white);color-scheme:dark;}
-
-  .cost-row{display:flex;align-items:center;gap:6px;padding:9px 0;border-bottom:1px solid var(--border);}
-  .cost-row:last-child{border-bottom:none;}
-  .cost-label{font-size:12px;color:var(--w80);font-weight:600;min-width:70px;flex:1;}
-  .cost-val{width:90px;padding:6px;border-radius:8px;border:1.5px solid var(--borderBright);background:rgba(255,255,255,0.1);color:var(--white);font-size:13px;font-weight:700;text-align:right;outline:none;color-scheme:dark;}
-  .cost-unit{font-size:11px;color:var(--w50);min-width:16px;}
-
-  .bar-wrap{margin-bottom:12px;}
-  .bar-header{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;}
-  .bar-track{height:10px;background:rgba(255,255,255,0.1);border-radius:99px;}
-  .bar-fill{height:100%;border-radius:99px;transition:width 0.6s;}
-
-  .heater-item{padding:12px 0;border-bottom:1px solid var(--border);}
-  .heater-item:last-child{border-bottom:none;}
-  .heater-head{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-  .heater-name{font-size:14px;font-weight:700;flex:1;}
-  .heater-days{font-size:11px;font-weight:600;color:var(--w50);}
-  .heater-input{width:100%;padding:9px 14px;border-radius:10px;border:1.5px solid var(--borderBright);font-size:14px;font-weight:600;background:rgba(255,255,255,0.12);color:var(--white);outline:none;color-scheme:dark;}
-  .heater-days.warn{color:#ffb74d;}
-  .heater-days.bad{color:#ff8a80;}
-
-  .info-box{background:rgba(66,165,245,0.1);border-radius:14px;padding:12px 16px;border:1px solid var(--border);margin-top:10px;}
-  .info-title{font-size:12px;color:#7ec8f7;font-weight:700;}
-  .info-text{font-size:13px;color:var(--w80);margin-top:4px;line-height:1.5;}
-
-  .btn{width:100%;padding:11px;border-radius:12px;border:1px solid var(--borderBright);background:rgba(255,255,255,0.1);color:var(--white);font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
-  .btn.danger{border-color:rgba(255,138,128,0.5);color:#ff8a80;}
-  .sync-status{font-size:11px;color:var(--w50);text-align:center;margin-top:8px;}
+  .row-value{font-weight:700;color:var(--white);}
+  .row-value.hl{color:var(--accent);}
+  .input-row, .cost-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+  .input-row:last-child, .cost-row:last-child{border-bottom:none;}
+  .input-label, .cost-label{font-size:15px;color:var(--w80);font-weight:500;flex:1;}
+  .input-field, .cost-val, .heater-input{width:140px;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.15);font-size:15px;font-weight:700;text-align:right;outline:none;background:rgba(0,0,0,0.25);color:var(--white);transition:all 0.2s ease;color-scheme:dark;}
+  .heater-input{width:100%;text-align:left;margin-top:8px;}
+  .cost-row{gap:8px;}
+  .cost-val{width:100px;}
+  .cost-unit{font-size:13px;color:var(--w50);min-width:24px;font-weight:600;}
+  .bar-wrap{margin-bottom:16px;}
+  .bar-track{height:12px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:99px;transition:width 0.8s ease;}
+  .info-box{background:rgba(0, 210, 255, 0.05);border-radius:18px;padding:14px 18px;border:1px solid rgba(0, 210, 255, 0.15);margin-top:16px;}
+  .info-title{font-size:13px;color:var(--accent);font-weight:700;}
+  .info-text{font-size:13px;color:var(--w80);margin-top:6px;line-height:1.5;}
+  .sync-status{font-size:12px;color:var(--w50);text-align:center;margin-top:16px;font-weight:500;}
 </style>
-
-<!-- Firebase (compat) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <div class="app">
   <div class="header">
-    <div class="header-left">
-      <div class="header-date" id="hdr-date"></div>
-      <h1>💨 E-Smoker</h1>
+    <div class="header-left-wrap">
+      <svg class="app-logo" xmlns="http://w3.org" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#ff5252" stroke-width="8"/>
+        <line x1="22" y1="22" x2="78" y2="78" stroke="#ff5252" stroke-width="8"/>
+        <g transform="translate(12,12) scale(0.75)">
+          <rect x="20" y="44" width="48" height="12" rx="2" fill="#ffffff"/>
+          <rect x="68" y="44" width="16" height="12" rx="2" fill="#ffb300"/>
+        </g>
+      </svg>
+      <div>
+        <div class="header-date" id="hdr-date"></div>
+        <h1>E-Smoker Pro</h1>
+      </div>
     </div>
-    <button class="auth-btn" id="auth-btn" type="button" onclick="toggleAuth()">
-      <span id="auth-label">Prijava</span>
-    </button>
+    <button class="auth-btn" id="auth-btn" onclick="toggleAuth()">Prijava</button>
   </div>
-
-  <div class="tabs" id="tabs">
-    <button class="tab-btn active" type="button" data-tab="dashboard"><span class="tab-icon">📊</span>Pregled</button>
-    <button class="tab-btn" type="button" data-tab="costs"><span class="tab-icon">💸</span>Troškovi</button>
-    <button class="tab-btn" type="button" data-tab="heaters"><span class="tab-icon">🔥</span>Grijači</button>
-    <button class="tab-btn" type="button" data-tab="settings"><span class="tab-icon">⚙️</span>Podaci</button>
+  
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dashboard">📊 Pregled</button>
+    <button class="tab-btn" data-tab="costs">💸 Troškovi</button>
+    <button class="tab-btn" data-tab="heaters">🔥 Grijači</button>
+    <button class="tab-btn" data-tab="settings">⚙️ Podaci</button>
   </div>
-
+  
   <div class="content">
-    <!-- PREGLED -->
     <div class="tab-panel active" id="panel-dashboard">
       <div class="hero">
         <div class="hero-label">💰 Ukupno uštedeno</div>
         <div class="hero-amount" id="d-saved">+0.00 €</div>
         <div class="hero-sub" id="d-days">0 dana e-pušenja</div>
       </div>
+      
       <div class="stat-grid">
-        <div class="stat-card accent"><div class="stat-label">Ušteda / dan</div><div class="stat-value" id="d-saved-day">0.00 €</div></div>
-        <div class="stat-card accent"><div class="stat-label">Ušteda / god.</div><div class="stat-value" id="d-saved-year">0 €</div></div>
+        <div class="stat-card"><div class="stat-label">Potrošeno (Vape)</div><div class="stat-value" id="d-spent-total">0.00 €</div></div>
+        <div class="stat-card"><div class="stat-label">Dnevno (ml)</div><div class="stat-value" id="d-ml-day">—</div></div>
         <div class="stat-card"><div class="stat-label">Da pušim / dan</div><div class="stat-value" id="d-would-day">0.00 €</div></div>
-        <div class="stat-card"><div class="stat-label">Ml / dan</div><div class="stat-value" id="d-ml-day">—</div></div>
+        <div class="stat-card"><div class="stat-label">Dnevno (Vape €)</div><div class="stat-value" id="d-vape-day-eur">0.00 €</div></div>
       </div>
+      
       <div class="card">
-        <div class="card-title">Usporedba troškova</div>
+        <div class="card-title">📊 Statistika</div>
+        <div class="row"><span class="row-label">Ušteda / dan</span><span class="row-value" style="color:var(--accent);" id="d-saved-day">0.00 €</span></div>
+        <div class="row"><span class="row-label">Ušteda / godina</span><span class="row-value" style="color:var(--accent);" id="d-saved-year">0 €</span></div>
+        <div class="row"><span class="row-label">Ukupno bi potrošio (cigarete)</span><span class="row-value" id="d-would-total">0.00 €</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📈 Omjer troškova</div>
         <div class="bar-wrap">
-          <div class="bar-header"><span style="color:var(--w80);font-weight:600">🚬 Da pušim</span><span style="font-weight:800" id="d-would-total">0.00 €</span></div>
-          <div class="bar-track"><div class="bar-fill" id="bar-smoke" style="width:100%;background:#4a90d9"></div></div>
+          <div class="bar-header"><span>🚬 Da pušim</span><span id="d-bar-smoke-val">0.00 €</span></div>
+          <div class="bar-track"><div class="bar-fill" id="bar-smoke" style="width:100%;background:linear-gradient(90deg, #0066ff, #00d2ff)"></div></div>
         </div>
         <div class="bar-wrap">
-          <div class="bar-header"><span style="color:var(--w80);font-weight:600">💨 E-cigarete</span><span style="font-weight:800" id="d-spent-total">0.00 €</span></div>
-          <div class="bar-track"><div class="bar-fill" id="bar-vape" style="width:0%;background:#7ec8f7"></div></div>
+          <div class="bar-header"><span>💨 E-cigarete</span><span id="d-bar-vape-val">0.00 €</span></div>
+          <div class="bar-track"><div class="bar-fill" id="bar-vape" style="width:0%;background:linear-gradient(90deg, #ff007f, #ff5252)"></div></div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title">Cigarete koje nisi popušio</div>
-        <div class="row"><span class="row-label">Cigareta</span><span class="row-value hl" id="d-cigs">0</span></div>
-        <div class="row"><span class="row-label">Kutija</span><span class="row-value" id="d-packs">0</span></div>
-      </div>
-      <div class="sync-status" id="sync-msg">Podaci se spremaju lokalno. Prijavi se za Cloud čuvanje.</div>
+      <div class="sync-status" id="sync-msg">Podaci se spremaju lokalno. Prijavi se za Cloud.</div>
     </div>
 
-    <!-- TROŠKOVI -->
     <div class="tab-panel" id="panel-costs">
       <div class="card">
         <div class="card-title">💸 Unos troškova</div>
-        <div class="cost-row">
-          <span class="cost-label">E-cigarete (uređaji)</span>
-          <input type="number" class="cost-val" id="c-hardware" step="0.01" min="0" value="0" oninput="saveData()"/>
-          <span class="cost-unit">€</span>
-        </div>
-        <div class="cost-row">
-          <span class="cost-label">Tekućine</span>
-          <input type="number" class="cost-val" id="c-liquid" step="0.01" min="0" value="0" oninput="saveData()"/>
-          <span class="cost-unit">€</span>
-        </div>
-        <div class="cost-row">
-          <span class="cost-label">Grijači / podovi</span>
-          <input type="number" class="cost-val" id="c-coils" step="0.01" min="0" value="0" oninput="saveData()"/>
-          <span class="cost-unit">€</span>
-        </div>
-        <div class="cost-row">
-          <span class="cost-label">Ostalo</span>
-          <input type="number" class="cost-val" id="c-other" step="0.01" min="0" value="0" oninput="saveData()"/>
-          <span class="cost-unit">€</span>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Sažetak</div>
-        <div class="row"><span class="row-label">Ukupno potrošeno</span><span class="row-value" id="c-total">0.00 €</span></div>
-        <div class="row"><span class="row-label">Prosječno / dan</span><span class="row-value" id="c-per-day">0.00 €</span></div>
-        <div class="row"><span class="row-label">Prosječno / mjesec</span><span class="row-value hl" id="c-per-month">0.00 €</span></div>
+        <div class="cost-row"><span>Oprema i modovi</span><input type="number" class="cost-val" id="c-hardware" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
+        <div class="cost-row"><span>E-tekućine / Liquidi</span><input type="number" class="cost-val" id="c-liquids" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
+        <div class="cost-row"><span>Ukupno potrošeno ml</span><input type="number" class="cost-val" id="c-ml" step="0.1" value="0.0" oninput="saveData()"/><span class="cost-unit">ml</span></div>
       </div>
     </div>
 
-    <!-- GRIJAČI -->
     <div class="tab-panel" id="panel-heaters">
       <div class="card">
-        <div class="card-title">🔥 Zamjena grijača</div>
-        <div id="heater-list"></div>
-        <button class="btn" type="button" onclick="addHeater()">+ Dodaj grijač</button>
-      </div>
-      <div class="info-box">
-        <div class="info-title">Savjet</div>
-        <div class="info-text">Upiši datum kad si stavio grijač. Nakon <span id="h-limit-txt">14</span> dana označit će se narančasto, nakon <span id="h-limit2-txt">21</span> crveno.</div>
-      </div>
-    </div>
-
-    <!-- PODACI -->
-    <div class="tab-panel" id="panel-settings">
-      <div class="card">
-        <div class="card-title">⚙️ Osnovni podaci</div>
-        <div class="input-row"><span class="input-label">Datum prelaska na e-cigarete</span><input type="date" class="input-field" id="s-start" oninput="saveData()"/></div>
-        <div class="input-row"><span class="input-label">Cigareta dnevno (prije)</span><input type="number" class="input-field" id="s-cigs-day" min="0" step="1" value="20" oninput="saveData()"/></div>
-        <div class="input-row"><span class="input-label">Cigareta u kutiji</span><input type="number" class="input-field" id="s-cigs-pack" min="1" step="1" value="20" oninput="saveData()"/></div>
-        <div class="input-row"><span class="input-label">Cijena kutije (€)</span><input type="number" class="input-field" id="s-pack-price" min="0" step="0.01" value="5.00" oninput="saveData()"/></div>
-      </div>
-      <div class="card">
-        <div class="card-title">💨 E-cigarete</div>
-        <div class="input-row"><span class="input-label">Tekućine dnevno (ml)</span><input type="number" class="input-field" id="s-ml-day" min="0" step="0.1" value="3" oninput="saveData()"/></div>
-        <div class="input-row"><span class="input-label">Upozorenje za grijač (dana)</span><input type="number" class="input-field" id="s-heater-limit" min="1" step="1" value="14" oninput="saveData()"/></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Podaci</div>
-        <button class="btn" type="button" onclick="exportData()">Izvezi podatke (JSON)</button>
-        <button class="btn danger" type="button" onclick="resetData()">Obriši sve podatke</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-/* ============ KONFIGURACIJA ============ */
-// Upiši svoje Firebase podatke (Firebase konzola → Project settings → Web app).
-// Dok je apiKey prazan, app radi samo s lokalnim spremanjem – tabovi i sve ostalo rade normalno.
-const FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  appId: ""
-};
-const STORAGE_KEY = "esmoker-data";
-
-/* ============ STANJE ============ */
-const defaults = () => ({
-  start: new Date().toISOString().slice(0, 10),
-  cigsDay: 20, cigsPack: 20, packPrice: 5, mlDay: 3, heaterLimit: 14,
-  hardware: 0, liquid: 0, coils: 0, other: 0,
-  heaters: []
-});
-let data = defaults();
-let user = null, db = null, firebaseReady = false, saveTimer = null;
-
-/* ============ TABOVI (uvijek aktivni) ============ */
-document.getElementById("tabs").addEventListener("click", e => {
-  const btn = e.target.closest(".tab-btn");
-  if (!btn) return;
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b === btn));
-  document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.id === "panel-" + btn.dataset.tab));
-  document.querySelector(".content").scrollTop = 0;
-});
-
-/* ============ SPREMANJE ============ */
-function readInputs() {
-  const num = id => parseFloat(document.getElementById(id).value) || 0;
-  data.start = document.getElementById("s-start").value || data.start;
-  data.cigsDay = num("s-cigs-day"); data.cigsPack = Math.max(1, num("s-cigs-pack"));
-  data.packPrice = num("s-pack-price"); data.mlDay = num("s-ml-day");
-  data.heaterLimit = Math.max(1, num("s-heater-limit"));
-  data.hardware = num("c-hardware"); data.liquid = num("c-liquid");
-  data.coils = num("c-coils"); data.other = num("c-other");
-}
-function writeInputs() {
-  const set = (id, v) => { document.getElementById(id).value = v; };
-  set("s-start", data.start); set("s-cigs-day", data.cigsDay); set("s-cigs-pack", data.cigsPack);
-  set("s-pack-price", data.packPrice); set("s-ml-day", data.mlDay); set("s-heater-limit", data.heaterLimit);
-  set("c-hardware", data.hardware); set("c-liquid", data.liquid); set("c-coils", data.coils); set("c-other", data.other);
-  renderHeaters();
-}
-function saveData() {
-  readInputs();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  render();
-  if (user && db) {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      db.collection("users").doc(user.uid).set(data)
-        .then(() => setSync("☁️ Spremljeno u Cloud"))
-        .catch(err => setSync("Greška pri spremanju: " + err.message));
-    }, 600);
-  }
-}
-function loadLocal() {
-  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) data = { ...defaults(), ...JSON.parse(raw) }; }
-  catch (e) { data = defaults(); }
-}
-function setSync(msg) { document.getElementById("sync-msg").textContent = msg; }
-
-/* ============ IZRAČUN ============ */
-const fmt = n => n.toFixed(2).replace(".", ",") + " €";
-function daysSince(dateStr) {
-  const d = new Date(dateStr + "T00:00:00"); if (isNaN(d)) return 0;
-  return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
-}
-function render() {
-  const days = daysSince(data.start);
-  const cigPrice = data.packPrice / data.cigsPack;
-  const wouldDay = data.cigsDay * cigPrice;
-  const wouldTotal = wouldDay * days;
-  const spent = data.hardware + data.liquid + data.coils + data.other;
-  const saved = wouldTotal - spent;
-  const spentDay = days ? spent / days : 0;
-  const savedDay = wouldDay - spentDay;
-
-  const g = id => document.getElementById(id);
-  g("d-saved").textContent = (saved >= 0 ? "+" : "") + fmt(saved);
-  g("d-saved").style.color = saved >= 0 ? "#7ec8f7" : "#ff8a80";
-  g("d-days").textContent = days + (days === 1 ? " dan" : " dana") + " e-pušenja";
-  g("d-saved-day").textContent = fmt(savedDay);
-  g("d-saved-year").textContent = Math.round(savedDay * 365) + " €";
-  g("d-would-day").textContent = fmt(wouldDay);
-  g("d-ml-day").textContent = data.mlDay ? data.mlDay + " ml" : "—";
-  g("d-would-total").textContent = fmt(wouldTotal);
-  g("d-spent-total").textContent = fmt(spent);
-  const max = Math.max(wouldTotal, spent, 0.01);
-  g("bar-smoke").style.width = (wouldTotal / max * 100) + "%";
-  g("bar-vape").style.width = (spent / max * 100) + "%";
-  g("d-cigs").textContent = Math.round(data.cigsDay * days);
-  g("d-packs").textContent = (data.cigsDay * days / data.cigsPack).toFixed(1).replace(".", ",");
-  g("c-total").textContent = fmt(spent);
-  g("c-per-day").textContent = fmt(spentDay);
-  g("c-per-month").textContent = fmt(spentDay * 30);
-  g("h-limit-txt").textContent = data.heaterLimit;
-  g("h-limit2-txt").textContent = Math.round(data.heaterLimit * 1.5);
-  renderHeaterDays();
-}
-
-/* ============ GRIJAČI ============ */
-function addHeater() {
-  data.heaters.push({ name: "Grijač " + (data.heaters.length + 1), date: new Date().toISOString().slice(0, 10) });
-  renderHeaters(); saveData();
-}
-function removeHeater(i) { data.heaters.splice(i, 1); renderHeaters(); saveData(); }
-function updateHeater(i, field, val) { data.heaters[i][field] = val; saveData(); }
-function renderHeaters() {
-  const list = document.getElementById("heater-list");
-  if (!data.heaters.length) { list.innerHTML = '<div class="info-text">Još nema grijača. Dodaj prvi.</div>'; return; }
-  list.innerHTML = data.heaters.map((h, i) => `
-    <div class="heater-item">
-      <div class="heater-head">
-        <input class="heater-input" style="flex:1" value="${escapeHtml(h.name)}" oninput="updateHeater(${i},'name',this.value)"/>
-        <span class="heater-days" id="h-days-${i}"></span>
-        <button class="auth-btn" type="button" onclick="removeHeater(${i})" title="Obriši">✕</button>
-      </div>
-      <input type="date" class="heater-input" value="${h.date}" oninput="updateHeater(${i},'date',this.value)"/>
-    </div>`).join("");
-  renderHeaterDays();
-}
-function renderHeaterDays() {
-  data.heaters.forEach((h, i) => {
-    const el = document.getElementById("h-days-" + i); if (!el) return;
-    const d = daysSince(h.date);
-    el.textContent = d + " d";
-    el.className = "heater-days" + (d >= data.heaterLimit * 1.5 ? " bad" : d >= data.heaterLimit ? " warn" : "");
-  });
-}
-function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
-
-/* ============ PRIJAVA (Firebase) ============ */
-function initFirebase() {
-  if (!FIREBASE_CONFIG.apiKey || typeof firebase === "undefined") {
-    setSync("Podaci se spremaju lokalno. Cloud nije konfiguriran.");
-    return;
-  }
-  try {
-    firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.firestore();
-    firebaseReady = true;
-    firebase.auth().onAuthStateChanged(u => {
-      user = u;
-      const btn = document.getElementById("auth-btn");
-      if (u) {
-        btn.innerHTML = (u.photoURL ? `<img class="user-avatar" src="${u.photoURL}" alt=""/>` : "") + `<span id="auth-label">Odjava</span>`;
-        db.collection("users").doc(u.uid).get().then(snap => {
-          if (snap.exists) { data = { ...defaults(), ...snap.data() }; localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); writeInputs(); render(); setSync("☁️ Sinkronizirano s Cloudom"); }
-          else { saveData(); }
-        }).catch(err => setSync("Greška pri učitavanju: " + err.message));
-      } else {
-        btn.innerHTML = `<span id="auth-label">Prijava</span>`;
-        setSync("Podaci se spremaju lokalno. Prijavi se za Cloud čuvanje.");
-      }
-    });
-  } catch (e) {
-    setSync("Cloud nedostupan: " + e.message);
-  }
-}
-function toggleAuth() {
-  if (!firebaseReady) { setSync("Cloud nije konfiguriran – upiši FIREBASE_CONFIG u index.html."); return; }
-  if (user) { firebase.auth().signOut(); return; }
-  const provider = new firebase.auth.GoogleAuthProvider();
-  firebase.auth().signInWithPopup(provider).catch(err => {
-    if (err.code === "auth/popup-blocked" || err.code === "auth/operation-not-supported-in-this-environment") firebase.auth().signInWithRedirect(provider);
-    else setSync("Prijava nije uspjela: " + err.message);
-  });
-}
-
-/* ============ ALATI ============ */
-function exportData() {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "esmoker-podaci.json"; a.click();
-}
-function resetData() {
-  if (!confirm("Obrisati sve podatke?")) return;
-  data = defaults(); localStorage.removeItem(STORAGE_KEY); writeInputs(); saveData();
-}
-
-/* ============ START ============ */
-document.getElementById("hdr-date").textContent = new Date().toLocaleDateString("hr-HR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-loadLocal(); writeInputs(); render(); initFirebase();
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
-</script>
-</body>
-</html>
+        <div class="card-title">🔥 Praćenje grijača</div>
+        <div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span>Zadnja zamjena grijača</span><span id="h-days-count">(0 dana)</span>
