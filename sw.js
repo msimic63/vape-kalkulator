@@ -1,5 +1,5 @@
-const CACHE = "esmoker-v5";
-const BASE = "/E-cigarete";
+const CACHE = "esmoker-v6";
+const BASE = "/vape-kalkulator";
 
 // Samo statika se kešira; index.html je namjerno izostavljen
 const ASSETS = [
