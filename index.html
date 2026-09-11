@@ -73,7 +73,7 @@
   .heater-item:last-child{border-bottom:none;}
   .heater-head{display:flex;align-items:center;gap:8px;}
   .heater-head .heater-input{margin-top:0;flex:1;width:auto;}
-  .heater-days{font-size:12px;font-weight:700;color:var(--w50);white-space:nowrap;}
+  .heater-days{font-size:12px;font-weight:700;color:#4caf50;white-space:nowrap;}
   .heater-days.warn{color:#ffb300;}.heater-days.bad{color:#ff5252;}
   .bar-header{display:flex;justify-content:space-between;font-size:14px;font-weight:600;margin-bottom:6px;color:var(--w80);}
   .btn{width:100%;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:var(--white);font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;}
@@ -152,9 +152,9 @@
     <div class="tab-panel" id="panel-costs">
       <div class="card">
         <div class="card-title">💸 Unos troškova</div>
-        <div class="cost-row"><span>Oprema i modovi</span><input type="number" class="cost-val" id="c-hardware" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
-        <div class="cost-row"><span>E-tekućine / Liquidi</span><input type="number" class="cost-val" id="c-liquids" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
-        <div class="cost-row"><span>Ukupno potrošeno ml</span><input type="number" class="cost-val" id="c-ml" step="0.1" value="0.0" oninput="saveData()"/><span class="cost-unit">ml</span></div>
+        <div class="cost-row"><span>E-cigarete</span><input type="number" class="cost-val" id="c-hardware" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
+        <div class="cost-row"><span>Cigarete</span><input type="number" class="cost-val" id="c-liquids" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
+        <div class="cost-row"><span>Potrošeno tekućine</span><input type="number" class="cost-val" id="c-ml" step="0.1" value="0.0" oninput="saveData()"/><span class="cost-unit">ml</span></div>
       </div>
     </div>
 
@@ -166,7 +166,7 @@
       </div>
       <div class="info-box">
         <div class="info-title">Kako radi</div>
-        <div class="info-text">Upiši datum kad si stavio novi grijač. Nakon <span id="h-limit-txt">14</span> dana broj dana postaje žut, nakon <span id="h-limit2-txt">21</span> crven — vrijeme za zamjenu.</div>
+        <div class="info-text">Upiši datum kad si stavio novi grijač. Do <span id="h-limit-txt">120</span> dana zeleno, do <span id="h-limit2-txt">140</span> dana žuto, iznad toga crveno — vrijeme za zamjenu.</div>
       </div>
     </div>
 
@@ -180,7 +180,8 @@
       </div>
       <div class="card">
         <div class="card-title">🔥 Grijači</div>
-        <div class="input-row"><span class="input-label">Upozorenje nakon (dana)</span><input type="number" class="input-field" id="s-heater-limit" min="1" step="1" value="14" oninput="saveData()"/></div>
+        <div class="input-row"><span class="input-label">Žuto od (dana)</span><input type="number" class="input-field" id="s-heater-limit" min="1" step="1" value="120" oninput="saveData()"/></div>
+        <div class="input-row"><span class="input-label">Crveno iznad (dana)</span><input type="number" class="input-field" id="s-heater-limit2" min="1" step="1" value="140" oninput="saveData()"/></div>
       </div>
       <div class="card">
         <div class="card-title">🗂️ Podaci</div>
@@ -208,7 +209,7 @@ const STORAGE_KEY = "esmoker-data";
 /* ===== STANJE ===== */
 const defaults = () => ({
   start: new Date().toISOString().slice(0, 10),
-  cigsDay: 20, cigsPack: 20, packPrice: 5, heaterLimit: 14,
+  cigsDay: 20, cigsPack: 20, packPrice: 5, heaterLimit: 120, heaterLimit2: 140,
   hardware: 0, liquids: 0, ml: 0, heaters: []
 });
 let data = defaults(), user = null, db = null, firebaseReady = false, saveTimer = null;
@@ -226,12 +227,12 @@ const num = id => parseFloat($(id).value) || 0;
 function readInputs() {
   data.start = $("s-start").value || data.start;
   data.cigsDay = num("s-cigs-day"); data.cigsPack = Math.max(1, num("s-cigs-pack"));
-  data.packPrice = num("s-pack-price"); data.heaterLimit = Math.max(1, num("s-heater-limit"));
+  data.packPrice = num("s-pack-price"); data.heaterLimit = Math.max(1, num("s-heater-limit")); data.heaterLimit2 = Math.max(data.heaterLimit, num("s-heater-limit2"));
   data.hardware = num("c-hardware"); data.liquids = num("c-liquids"); data.ml = num("c-ml");
 }
 function writeInputs() {
   $("s-start").value = data.start; $("s-cigs-day").value = data.cigsDay; $("s-cigs-pack").value = data.cigsPack;
-  $("s-pack-price").value = data.packPrice; $("s-heater-limit").value = data.heaterLimit;
+  $("s-pack-price").value = data.packPrice; $("s-heater-limit").value = data.heaterLimit; $("s-heater-limit2").value = data.heaterLimit2;
   $("c-hardware").value = data.hardware; $("c-liquids").value = data.liquids; $("c-ml").value = data.ml;
   renderHeaters();
 }
@@ -278,7 +279,7 @@ function render() {
   $("bar-smoke").style.width = (wouldTotal / max * 100) + "%";
   $("bar-vape").style.width = (spent / max * 100) + "%";
   $("h-limit-txt").textContent = data.heaterLimit;
-  $("h-limit2-txt").textContent = Math.round(data.heaterLimit * 1.5);
+  $("h-limit2-txt").textContent = data.heaterLimit2;
   renderHeaterDays();
 }
 
@@ -306,7 +307,7 @@ function renderHeaterDays() {
     const el = $("h-days-" + i); if (!el) return;
     const d = daysSince(h.date);
     el.textContent = d + " d";
-    el.className = "heater-days" + (d >= data.heaterLimit * 1.5 ? " bad" : d >= data.heaterLimit ? " warn" : "");
+    el.className = "heater-days" + (d > data.heaterLimit2 ? " bad" : d >= data.heaterLimit ? " warn" : "");
   });
 }
 
