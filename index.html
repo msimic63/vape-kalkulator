@@ -31,7 +31,8 @@
   .tab-btn{flex:1;padding:14px 2px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--w50);display:flex;flex-direction:column;align-items:center;gap:4px;border-bottom:3px solid transparent;transition:all 0.2s ease;}
   .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(0, 210, 255, 0.05);}
   .content{flex:1;padding:20px;overflow-y:auto;}
-  .tab-panel{display:none;}.tab-panel.active{display:block;}
+  .tab-panel{display:none;animation:fadeIn 0.25s ease;}.tab-panel.active{display:block;}
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px);} to{opacity:1;transform:translateY(0);} }
   .card{background:var(--card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--cardBorder);border-radius:24px;padding:20px;margin-bottom:16px;}
   .card-title{font-size:16px;font-weight:700;color:var(--white);margin-bottom:14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:8px;}
   .hero{background:var(--accentGradient);border-radius:26px;padding:26px 22px;margin-bottom:16px;box-shadow:0 12px 40px rgba(0, 210, 255, 0.25);}
@@ -139,5 +140,3 @@
 
     <div class="tab-panel" id="panel-heaters">
       <div class="card">
-        <div class="card-title">🔥 Praćenje grijača</div>
-        <div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
