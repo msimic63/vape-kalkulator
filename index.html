@@ -4,6 +4,11 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="theme-color" content="#030c24"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="E-Smoker"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
 <title>E-Smoker Pro</title>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -31,7 +36,8 @@
   .tab-btn{flex:1;padding:14px 2px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--w50);display:flex;flex-direction:column;align-items:center;gap:4px;border-bottom:3px solid transparent;transition:all 0.2s ease;}
   .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(0, 210, 255, 0.05);}
   .content{flex:1;padding:20px;overflow-y:auto;}
-  .tab-panel{display:none;}.tab-panel.active{display:block;}
+  .tab-panel{display:none;animation:fadeIn 0.25s ease;}.tab-panel.active{display:block;}
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px);} to{opacity:1;transform:translateY(0);} }
   .card{background:var(--card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--cardBorder);border-radius:24px;padding:20px;margin-bottom:16px;}
   .card-title{font-size:16px;font-weight:700;color:var(--white);margin-bottom:14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:8px;}
   .hero{background:var(--accentGradient);border-radius:26px;padding:26px 22px;margin-bottom:16px;box-shadow:0 12px 40px rgba(0, 210, 255, 0.25);}
@@ -62,13 +68,28 @@
   .info-title{font-size:13px;color:var(--accent);font-weight:700;}
   .info-text{font-size:13px;color:var(--w80);margin-top:6px;line-height:1.5;}
   .sync-status{font-size:12px;color:var(--w50);text-align:center;margin-top:16px;font-weight:500;}
+  .heater-item{padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+  .heater-item:last-child{border-bottom:none;}
+  .heater-head{display:flex;align-items:center;gap:8px;}
+  .heater-head .heater-input{margin-top:0;flex:1;width:auto;}
+  .heater-days{font-size:12px;font-weight:700;color:var(--w50);white-space:nowrap;}
+  .heater-days.warn{color:#ffb300;}.heater-days.bad{color:#ff5252;}
+  .bar-header{display:flex;justify-content:space-between;font-size:14px;font-weight:600;margin-bottom:6px;color:var(--w80);}
+  .btn{width:100%;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:var(--white);font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;}
+  .btn.danger{border-color:rgba(255,82,82,0.4);color:#ff5252;}
+  .btn.small{width:auto;padding:8px 12px;margin:0;}
+  .auth-btn:focus-visible,.tab-btn:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .user-avatar{width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px;}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <div class="app">
   <div class="header">
     <div class="header-left-wrap">
-      <svg class="app-logo" xmlns="http://w3.org" viewBox="0 0 100 100">
+      <svg class="app-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
         <circle cx="50" cy="50" r="40" fill="none" stroke="#ff5252" stroke-width="8"/>
         <line x1="22" y1="22" x2="78" y2="78" stroke="#ff5252" stroke-width="8"/>
         <g transform="translate(12,12) scale(0.75)">
@@ -81,14 +102,14 @@
         <h1>E-Smoker Pro</h1>
       </div>
     </div>
-    <button class="auth-btn" id="auth-btn" onclick="toggleAuth()">Prijava</button>
+    <button class="auth-btn" id="auth-btn" type="button" onclick="toggleAuth()">Prijava</button>
   </div>
   
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="dashboard">📊 Pregled</button>
-    <button class="tab-btn" data-tab="costs">💸 Troškovi</button>
-    <button class="tab-btn" data-tab="heaters">🔥 Grijači</button>
-    <button class="tab-btn" data-tab="settings">⚙️ Podaci</button>
+  <div class="tabs" id="tabs">
+    <button type="button" class="tab-btn active" data-tab="dashboard">📊 Pregled</button>
+    <button type="button" class="tab-btn" data-tab="costs">💸 Troškovi</button>
+    <button type="button" class="tab-btn" data-tab="heaters">🔥 Grijači</button>
+    <button type="button" class="tab-btn" data-tab="settings">⚙️ Podaci</button>
   </div>
   
   <div class="content">
@@ -139,5 +160,189 @@
     <div class="tab-panel" id="panel-heaters">
       <div class="card">
         <div class="card-title">🔥 Praćenje grijača</div>
-        <div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-          <span>Zadnja zamjena grijača</span><span id="h-days-count">(0 dana)</span>
+        <div id="heater-list"></div>
+        <button class="btn" type="button" onclick="addHeater()">+ Dodaj grijač</button>
+      </div>
+      <div class="info-box">
+        <div class="info-title">Kako radi</div>
+        <div class="info-text">Upiši datum kad si stavio novi grijač. Nakon <span id="h-limit-txt">14</span> dana broj dana postaje žut, nakon <span id="h-limit2-txt">21</span> crven — vrijeme za zamjenu.</div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-settings">
+      <div class="card">
+        <div class="card-title">🚬 Pušačke navike (prije)</div>
+        <div class="input-row"><span class="input-label">Datum prelaska na vape</span><input type="date" class="input-field" id="s-start" oninput="saveData()"/></div>
+        <div class="input-row"><span class="input-label">Cigareta dnevno</span><input type="number" class="input-field" id="s-cigs-day" min="0" step="1" value="20" oninput="saveData()"/></div>
+        <div class="input-row"><span class="input-label">Cigareta u kutiji</span><input type="number" class="input-field" id="s-cigs-pack" min="1" step="1" value="20" oninput="saveData()"/></div>
+        <div class="input-row"><span class="input-label">Cijena kutije (€)</span><input type="number" class="input-field" id="s-pack-price" min="0" step="0.01" value="5.00" oninput="saveData()"/></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔥 Grijači</div>
+        <div class="input-row"><span class="input-label">Upozorenje nakon (dana)</span><input type="number" class="input-field" id="s-heater-limit" min="1" step="1" value="14" oninput="saveData()"/></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🗂️ Podaci</div>
+        <button class="btn" type="button" onclick="exportData()">Izvezi podatke (JSON)</button>
+        <button class="btn danger" type="button" onclick="resetData()">Obriši sve podatke</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== FIREBASE (opcionalno) =====
+   Upiši podatke iz Firebase konzole (Project settings → Your apps → Web).
+   Dok je apiKey prazan, app radi samo lokalno; tabovi i sve ostalo rade normalno. */
+const FIREBASE_CONFIG = { apiKey: "", authDomain: "", projectId: "", appId: "" };
+const STORAGE_KEY = "esmoker-data";
+
+/* ===== STANJE ===== */
+const defaults = () => ({
+  start: new Date().toISOString().slice(0, 10),
+  cigsDay: 20, cigsPack: 20, packPrice: 5, heaterLimit: 14,
+  hardware: 0, liquids: 0, ml: 0, heaters: []
+});
+let data = defaults(), user = null, db = null, firebaseReady = false, saveTimer = null;
+
+/* ===== TABOVI (uvijek aktivni, neovisno o prijavi) ===== */
+document.getElementById("tabs").addEventListener("click", e => {
+  const btn = e.target.closest(".tab-btn"); if (!btn) return;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b === btn));
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.id === "panel-" + btn.dataset.tab));
+});
+
+/* ===== SPREMANJE ===== */
+const $ = id => document.getElementById(id);
+const num = id => parseFloat($(id).value) || 0;
+function readInputs() {
+  data.start = $("s-start").value || data.start;
+  data.cigsDay = num("s-cigs-day"); data.cigsPack = Math.max(1, num("s-cigs-pack"));
+  data.packPrice = num("s-pack-price"); data.heaterLimit = Math.max(1, num("s-heater-limit"));
+  data.hardware = num("c-hardware"); data.liquids = num("c-liquids"); data.ml = num("c-ml");
+}
+function writeInputs() {
+  $("s-start").value = data.start; $("s-cigs-day").value = data.cigsDay; $("s-cigs-pack").value = data.cigsPack;
+  $("s-pack-price").value = data.packPrice; $("s-heater-limit").value = data.heaterLimit;
+  $("c-hardware").value = data.hardware; $("c-liquids").value = data.liquids; $("c-ml").value = data.ml;
+  renderHeaters();
+}
+function saveData() {
+  readInputs();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  render();
+  if (user && db) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => db.collection("users").doc(user.uid).set(data)
+      .then(() => setSync("☁️ Spremljeno u Cloud"))
+      .catch(err => setSync("Greška pri spremanju: " + err.message)), 600);
+  }
+}
+function loadLocal() {
+  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) data = { ...defaults(), ...JSON.parse(raw) }; }
+  catch (e) { data = defaults(); }
+}
+const setSync = msg => { $("sync-msg").textContent = msg; };
+
+/* ===== IZRAČUN ===== */
+const fmt = n => n.toFixed(2).replace(".", ",") + " €";
+function daysSince(s) { const d = new Date(s + "T00:00:00"); return isNaN(d) ? 0 : Math.max(0, Math.floor((Date.now() - d) / 86400000)); }
+function render() {
+  const days = daysSince(data.start);
+  const wouldDay = data.cigsDay * (data.packPrice / data.cigsPack);
+  const wouldTotal = wouldDay * days;
+  const spent = data.hardware + data.liquids;
+  const spentDay = days ? spent / days : 0;
+  const saved = wouldTotal - spent, savedDay = wouldDay - spentDay;
+
+  $("d-saved").textContent = (saved >= 0 ? "+" : "") + fmt(saved);
+  $("d-days").textContent = days + (days === 1 ? " dan" : " dana") + " e-pušenja";
+  $("d-spent-total").textContent = fmt(spent);
+  $("d-ml-day").textContent = days && data.ml ? (data.ml / days).toFixed(1).replace(".", ",") + " ml" : "—";
+  $("d-would-day").textContent = fmt(wouldDay);
+  $("d-vape-day-eur").textContent = fmt(spentDay);
+  $("d-saved-day").textContent = fmt(savedDay);
+  $("d-saved-year").textContent = Math.round(savedDay * 365) + " €";
+  $("d-would-total").textContent = fmt(wouldTotal);
+  $("d-bar-smoke-val").textContent = fmt(wouldTotal);
+  $("d-bar-vape-val").textContent = fmt(spent);
+  const max = Math.max(wouldTotal, spent, 0.01);
+  $("bar-smoke").style.width = (wouldTotal / max * 100) + "%";
+  $("bar-vape").style.width = (spent / max * 100) + "%";
+  $("h-limit-txt").textContent = data.heaterLimit;
+  $("h-limit2-txt").textContent = Math.round(data.heaterLimit * 1.5);
+  renderHeaterDays();
+}
+
+/* ===== GRIJAČI ===== */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function addHeater() { data.heaters.push({ name: "Grijač " + (data.heaters.length + 1), date: new Date().toISOString().slice(0, 10) }); renderHeaters(); saveData(); }
+function removeHeater(i) { data.heaters.splice(i, 1); renderHeaters(); saveData(); }
+function updateHeater(i, f, v) { data.heaters[i][f] = v; saveData(); }
+function renderHeaters() {
+  const list = $("heater-list");
+  if (!data.heaters.length) { list.innerHTML = '<div class="info-text">Još nema grijača. Dodaj prvi.</div>'; return; }
+  list.innerHTML = data.heaters.map((h, i) => `
+    <div class="heater-item">
+      <div class="heater-head">
+        <input class="heater-input" value="${esc(h.name)}" oninput="updateHeater(${i},'name',this.value)"/>
+        <span class="heater-days" id="h-days-${i}"></span>
+        <button class="btn small" type="button" onclick="removeHeater(${i})" title="Obriši">✕</button>
+      </div>
+      <input type="date" class="heater-input" value="${h.date}" oninput="updateHeater(${i},'date',this.value)"/>
+    </div>`).join("");
+  renderHeaterDays();
+}
+function renderHeaterDays() {
+  data.heaters.forEach((h, i) => {
+    const el = $("h-days-" + i); if (!el) return;
+    const d = daysSince(h.date);
+    el.textContent = d + " d";
+    el.className = "heater-days" + (d >= data.heaterLimit * 1.5 ? " bad" : d >= data.heaterLimit ? " warn" : "");
+  });
+}
+
+/* ===== PRIJAVA ===== */
+function initFirebase() {
+  if (!FIREBASE_CONFIG.apiKey || typeof firebase === "undefined") return;
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore(); firebaseReady = true;
+    firebase.auth().onAuthStateChanged(u => {
+      user = u;
+      const btn = $("auth-btn");
+      if (u) {
+        btn.innerHTML = (u.photoURL ? `<img class="user-avatar" src="${u.photoURL}" alt=""/>` : "") + "Odjava";
+        db.collection("users").doc(u.uid).get().then(snap => {
+          if (snap.exists) { data = { ...defaults(), ...snap.data() }; localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); writeInputs(); render(); setSync("☁️ Sinkronizirano s Cloudom"); }
+          else saveData();
+        }).catch(err => setSync("Greška pri učitavanju: " + err.message));
+      } else { btn.textContent = "Prijava"; setSync("Podaci se spremaju lokalno. Prijavi se za Cloud."); }
+    });
+  } catch (e) { setSync("Cloud nedostupan: " + e.message); }
+}
+function toggleAuth() {
+  if (!firebaseReady) { setSync("Cloud nije konfiguriran – upiši FIREBASE_CONFIG u index.html."); return; }
+  if (user) { firebase.auth().signOut(); return; }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).catch(err => {
+    if (err.code === "auth/popup-blocked" || err.code === "auth/operation-not-supported-in-this-environment") firebase.auth().signInWithRedirect(provider);
+    else setSync("Prijava nije uspjela: " + err.message);
+  });
+}
+
+/* ===== ALATI ===== */
+function exportData() {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+  a.download = "esmoker-podaci.json"; a.click();
+}
+function resetData() { if (!confirm("Obrisati sve podatke?")) return; data = defaults(); localStorage.removeItem(STORAGE_KEY); writeInputs(); saveData(); }
+
+/* ===== START ===== */
+$("hdr-date").textContent = new Date().toLocaleDateString("hr-HR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+loadLocal(); writeInputs(); render(); initFirebase();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
