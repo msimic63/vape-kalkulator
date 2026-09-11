@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="theme-color" content="#030c24"/>
+<title>E-Smoker Pro</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#030c24;
+    --bgGradient:linear-gradient(180deg, #051336 0%, #020819 100%);
+    --card:rgba(15, 67, 147, 0.25);
+    --cardLight:rgba(21, 101, 192, 0.35);
+    --cardBorder:rgba(255, 255, 255, 0.08);
+    --accent:#00d2ff;
+    --accentGradient:linear-gradient(135deg, #00d2ff 0%, #0066ff 100%);
+    --white:#ffffff;
+    --w80:rgba(255,255,255,0.8);
+    --w50:rgba(255,255,255,0.5);
+  }
+  html,body{height:100%;background:var(--bg);background:var(--bgGradient);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--white);-webkit-tap-highlight-color:transparent;}
+  .app{max-width:540px;margin:0 auto;background:rgba(3, 12, 36, 0.4);min-height:100vh;display:flex;flex-direction:column;box-shadow:0 0 40px rgba(0,0,0,0.6);border-left:1px solid var(--cardBorder);border-right:1px solid var(--cardBorder);}
+  .header{padding:20px 24px 14px;display:flex;justify-content:space-between;align-items:center;background:rgba(5, 19, 54, 0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--cardBorder);}
+  .header-left-wrap{display:flex;align-items:center;gap:12px;}
+  .app-logo{width:36px;height:36px;flex-shrink:0;}
+  .header-date{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;margin-bottom:2px;}
+  .header h1{font-size:22px;font-weight:800;letter-spacing:-0.5px;}
+  .auth-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:var(--white);padding:8px 16px;border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s ease;}
+  .tabs{background:rgba(5, 19, 54, 0.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--cardBorder);display:flex;position:sticky;top:0;z-index:10;}
+  .tab-btn{flex:1;padding:14px 2px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--w50);display:flex;flex-direction:column;align-items:center;gap:4px;border-bottom:3px solid transparent;transition:all 0.2s ease;}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(0, 210, 255, 0.05);}
+  .content{flex:1;padding:20px;overflow-y:auto;}
+  .tab-panel{display:none;}.tab-panel.active{display:block;}
+  .card{background:var(--card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--cardBorder);border-radius:24px;padding:20px;margin-bottom:16px;}
+  .card-title{font-size:16px;font-weight:700;color:var(--white);margin-bottom:14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:8px;}
+  .hero{background:var(--accentGradient);border-radius:26px;padding:26px 22px;margin-bottom:16px;box-shadow:0 12px 40px rgba(0, 210, 255, 0.25);}
+  .hero-label{font-size:11px;letter-spacing:1.5px;color:rgba(255,255,255,0.75);text-transform:uppercase;font-weight:700;}
+  .hero-amount{font-size:44px;font-weight:900;letter-spacing:-1.5px;color:var(--white);margin:4px 0;line-height:1;}
+  .hero-sub{font-size:14px;color:rgba(255,255,255,0.9);font-weight:500;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+  .stat-card{background:rgba(255,255,255,0.03);border:1px solid var(--cardBorder);border-radius:18px;padding:16px;}
+  .stat-label{font-size:11px;color:var(--w50);font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px;}
+  .stat-value{font-size:19px;font-weight:800;color:var(--white);line-height:1;}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:15px;}
+  .row:last-child{border-bottom:none;}
+  .row-label{color:var(--w80);font-weight:500;}
+  .row-value{font-weight:700;color:var(--white);}
+  .row-value.hl{color:var(--accent);}
+  .input-row, .cost-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+  .input-row:last-child, .cost-row:last-child{border-bottom:none;}
+  .input-label, .cost-label{font-size:15px;color:var(--w80);font-weight:500;flex:1;}
+  .input-field, .cost-val, .heater-input{width:140px;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.15);font-size:15px;font-weight:700;text-align:right;outline:none;background:rgba(0,0,0,0.25);color:var(--white);transition:all 0.2s ease;color-scheme:dark;}
+  .heater-input{width:100%;text-align:left;margin-top:8px;}
+  .cost-row{gap:8px;}
+  .cost-val{width:100px;}
+  .cost-unit{font-size:13px;color:var(--w50);min-width:24px;font-weight:600;}
+  .bar-wrap{margin-bottom:16px;}
+  .bar-track{height:12px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:99px;transition:width 0.8s ease;}
+  .info-box{background:rgba(0, 210, 255, 0.05);border-radius:18px;padding:14px 18px;border:1px solid rgba(0, 210, 255, 0.15);margin-top:16px;}
+  .info-title{font-size:13px;color:var(--accent);font-weight:700;}
+  .info-text{font-size:13px;color:var(--w80);margin-top:6px;line-height:1.5;}
+  .sync-status{font-size:12px;color:var(--w50);text-align:center;margin-top:16px;}
+  .user-avatar{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--accent);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-left-wrap">
+      <svg class="app-logo" xmlns="http://w3.org" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#ff5252" stroke-width="8"/>
+        <line x1="22" y1="22" x2="78" y2="78" stroke="#ff5252" stroke-width="8"/>
+        <g transform="translate(12,12) scale(0.75)">
+          <rect x="20" y="44" width="48" height="12" rx="2" fill="#ffffff"/>
+          <rect x="68" y="44" width="16" height="12" rx="2" fill="#ffb300"/>
+        </g>
+      </svg>
+      <div>
+        <div class="header-date" id="hdr-date"></div>
+        <h1>E-Smoker Pro</h1>
+      </div>
+    </div>
+    <button class="auth-btn" id="auth-btn" onclick="toggleAuth()">Prijava</button>
+  </div>
+  
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dashboard">📊 Pregled</button>
+    <button class="tab-btn" data-tab="costs">💸 Troškovi</button>
+    <button class="tab-btn" data-tab="heaters">🔥 Grijači</button>
+    <button class="tab-btn" data-tab="settings">⚙️ Podaci</button>
+  </div>
+  
+  <div class="content">
+    <div class="tab-panel active" id="panel-dashboard">
+      <div class="hero">
+        <div class="hero-label">💰 Ukupno uštedeno</div>
+        <div class="hero-amount" id="d-saved">+0.00 €</div>
+        <div class="hero-sub" id="d-days">0 dana e-pušenja</div>
+      </div>
+      
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Potrošeno (Vape)</div><div class="stat-value" id="d-spent-total">0.00 €</div></div>
+        <div class="stat-card"><div class="stat-label">Dnevno (ml)</div><div class="stat-value" id="d-ml-day">—</div></div>
+        <div class="stat-card"><div class="stat-label">Da pušim / dan</div><div class="stat-value" id="d-would-day">0.00 €</div></div>
+        <div class="stat-card"><div class="stat-label">Dnevno (Vape €)</div><div class="stat-value" id="d-vape-day-eur">0.00 €</div></div>
+      </div>
+      
+      <div class="card">
+        <div class="card-title">📊 Statistika</div>
+        <div class="row"><span class="row-label">Ušteda / dan</span><span class="row-value" style="color:var(--accent);" id="d-saved-day">0.00 €</span></div>
+        <div class="row"><span class="row-label">Ušteda / godina</span><span class="row-value" style="color:var(--accent);" id="d-saved-year">0 €</span></div>
+        <div class="row"><span class="row-label">Ukupno bi potrošio</span><span class="row-value" id="d-would-total">0.00 €</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📈 Omjer troškova</div>
+        <div class="bar-wrap">
+          <div class="bar-header"><span>🚬 Da pušim</span><span id="d-bar-smoke-val">0.00 €</span></div>
+          <div class="bar-track"><div class="bar-fill" id="bar-smoke" style="width:100%;background:linear-gradient(90deg, #0066ff, #00d2ff)"></div></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-header"><span>💨 E-cigarete</span><span id="d-bar-vape-val">0.00 €</span></div>
+          <div class="bar-track"><div class="bar-fill" id="bar-vape" style="width:0%;background:linear-gradient(90deg, #ff007f, #ff5252)"></div></div>
+        </div>
+      </div>
+      <div class="sync-status" id="sync-msg">Podaci se spremaju lokalno. Prijavi se za Cloud.</div>
+    </div>
+
+    <div class="tab-panel" id="panel-costs">
+      <div class="card">
+        <div class="card-title">💸 Unos troškova</div>
+        <div class="cost-row"><span>Oprema i modovi</span><input type="number" class="cost-val" id="c-hardware" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
+        <div class="cost-row"><span>E-tekućine / Liquidi</span><input type="number" class="cost-val" id="c-liquids" step="0.01" value="0.00" oninput="saveData()"/><span class="cost-unit">€</span></div>
+        <div class="cost-row"><span>Ukupno potrošeno ml</span><input type="number" class="cost-val" id="c-ml" step="0.1" value="0.0" oninput="saveData()"/><span class="cost-unit">ml</span></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-heaters">
+      <div class="card">
+        <div class="card-title">🔥 Praćenje grijača</div>
+        <div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
