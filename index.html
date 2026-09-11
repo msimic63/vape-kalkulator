@@ -59,8 +59,9 @@
   .input-field, .cost-val, .heater-input{width:140px;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.15);font-size:15px;font-weight:700;text-align:right;outline:none;background:rgba(0,0,0,0.25);color:var(--white);transition:all 0.2s ease;color-scheme:dark;}
   .heater-input{width:100%;text-align:left;margin-top:8px;}
   .cost-row{gap:8px;}
-  .cost-val{width:100px;}
-  .cost-unit{font-size:13px;color:var(--w50);min-width:24px;font-weight:600;}
+  .cost-row>span:first-child{flex:1;font-size:15px;color:var(--w80);font-weight:500;}
+  .cost-val{width:100px;flex:0 0 100px;}
+  .cost-unit{font-size:13px;color:var(--w50);width:28px;flex:0 0 28px;font-weight:600;text-align:left;}
   .bar-wrap{margin-bottom:16px;}
   .bar-track{height:12px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;}
   .bar-fill{height:100%;border-radius:99px;transition:width 0.8s ease;}
@@ -194,7 +195,14 @@
 /* ===== FIREBASE (opcionalno) =====
    Upiši podatke iz Firebase konzole (Project settings → Your apps → Web).
    Dok je apiKey prazan, app radi samo lokalno; tabovi i sve ostalo rade normalno. */
-const FIREBASE_CONFIG = { apiKey: "", authDomain: "", projectId: "", appId: "" };
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAxQCJ_j-qE5kNukhUy7t7EWpQjnsEApbA",
+  authDomain: "vape-kalkulator.firebaseapp.com",
+  projectId: "vape-kalkulator",
+  storageBucket: "vape-kalkulator.firebasestorage.app",
+  messagingSenderId: "334042935965",
+  appId: "1:334042935965:web:7b2f6478907f72c9dc9a74"
+};
 const STORAGE_KEY = "esmoker-data";
 
 /* ===== STANJE ===== */
