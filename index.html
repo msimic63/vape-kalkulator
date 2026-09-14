@@ -330,7 +330,7 @@ function initFirebase() {
     db = firebase.firestore(); firebaseReady = true;
     db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); // offline cache, radi i bez mreže
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
-    firebase.auth().getRedirectResult().catch(err => setSync("Prijava nije uspjela: " + err.message));
+    firebase.auth().getRedirectResult().catch(err => setSync("Prijava nije uspjela (" + (err.code || "?") + "): " + err.message));
     firebase.auth().onAuthStateChanged(u => {
       user = u;
       const btn = $("auth-btn");
@@ -358,10 +358,14 @@ function toggleAuth() {
   if (user) { firebase.auth().signOut(); return; }
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  if (isMobile() || isStandalone()) { firebase.auth().signInWithRedirect(provider); return; }
+  const fail = err => setSync("Prijava nije uspjela (" + (err.code || "?") + "): " + err.message);
+  // Popup prvo (na mobitelu se otvara kao nova kartica) – redirect je rezerva jer ga mobilni preglednici blokiraju zbog third-party kolačića
+  if (isStandalone()) { firebase.auth().signInWithRedirect(provider).catch(fail); return; }
+  setSync("Otvaram Google prijavu…");
   firebase.auth().signInWithPopup(provider).catch(err => {
-    if (err.code === "auth/popup-blocked" || err.code === "auth/operation-not-supported-in-this-environment") firebase.auth().signInWithRedirect(provider);
-    else setSync("Prijava nije uspjela: " + err.message);
+    if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/cancelled-popup-request", "auth/popup-closed-by-user"].includes(err.code))
+      firebase.auth().signInWithRedirect(provider).catch(fail);
+    else fail(err);
   });
 }
 
