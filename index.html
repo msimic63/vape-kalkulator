@@ -127,13 +127,6 @@
         <div class="stat-card"><div class="stat-label">Dnevno (ml)</div><div class="stat-value" id="d-ml-day">—</div></div>
         <div class="stat-card"><div class="stat-label">Dnevno (Vape €)</div><div class="stat-value" id="d-vape-day-eur">0,000 €</div></div>
       </div>
-      
-      <div class="card">
-        <div class="card-title">📊 Statistika</div>
-        <div class="row"><span class="row-label">Ušteda / dan</span><span class="row-value" style="color:var(--accent);" id="d-saved-day">0.00 €</span></div>
-        <div class="row"><span class="row-label">Ušteda / godina</span><span class="row-value" style="color:var(--accent);" id="d-saved-year">0 €</span></div>
-        <div class="row"><span class="row-label">Ukupno bi potrošio (cigarete)</span><span class="row-value" id="d-would-total">0.00 €</span></div>
-      </div>
 
       <div class="card">
         <div class="card-title">📈 Omjer troškova</div>
@@ -265,15 +258,12 @@ function render() {
   const wouldTotal = wouldDay * days;
   const spent = data.hardware + data.liquids;
   const spentDay = days ? spent / days : 0;
-  const saved = wouldTotal - spent, savedDay = wouldDay - spentDay;
+  const saved = wouldTotal - spent;
 
   $("d-saved").textContent = (saved >= 0 ? "+" : "") + fmt(saved);
   $("d-days").textContent = days + (days === 1 ? " dan" : " dana") + " e-pušenja";
   $("d-ml-day").textContent = days && data.ml ? fmt3(data.ml / days, "ml") : "—";
   $("d-vape-day-eur").textContent = fmt3(spentDay, "€");
-  $("d-saved-day").textContent = fmt(savedDay);
-  $("d-saved-year").textContent = Math.round(savedDay * 365) + " €";
-  $("d-would-total").textContent = fmt(wouldTotal);
   $("d-bar-smoke-val").textContent = fmt(wouldTotal);
   $("d-bar-vape-val").textContent = fmt(spent);
   const max = Math.max(wouldTotal, spent, 0.01);
