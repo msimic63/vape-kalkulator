@@ -140,6 +140,7 @@
         </div>
       </div>
       <div class="sync-status" id="sync-msg">Podaci se spremaju lokalno. Prijavi se za Cloud.</div>
+      <button class="btn" type="button" onclick="syncNow()">☁️ Sinkroniziraj sada</button>
     </div>
 
     <div class="tab-panel" id="panel-costs">
@@ -205,7 +206,9 @@ const defaults = () => ({
   cigsDay: 20, cigsPack: 20, packPrice: 5, heaterLimit: 120, heaterLimit2: 140,
   hardware: 0, liquids: 0, ml: 0, hardwareDate: "", liquidsDate: "", mlDate: "", heaters: []
 });
-let data = defaults(), user = null, db = null, firebaseReady = false, saveTimer = null;
+let data = defaults(), user = null, db = null, firebaseReady = false, saveTimer = null, unsubCloud = null;
+const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 /* ===== TABOVI (uvijek aktivni, neovisno o prijavi) ===== */
 document.getElementById("tabs").addEventListener("click", e => {
@@ -233,14 +236,31 @@ function writeInputs() {
 }
 function saveData() {
   readInputs();
+  data.updatedAt = Date.now();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   render();
-  if (user && db) {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => db.collection("users").doc(user.uid).set(data)
-      .then(() => setSync("☁️ Spremljeno u Cloud"))
-      .catch(err => setSync("Greška pri spremanju: " + err.message)), 600);
-  }
+  pushToCloud();
+}
+function pushToCloud() {
+  if (!(user && db)) return;
+  clearTimeout(saveTimer);
+  setSync("☁️ Spremam…");
+  saveTimer = setTimeout(() => db.collection("users").doc(user.uid).set(data, { merge: true })
+    .then(() => setSync("☁️ Sinkronizirano · " + new Date().toLocaleTimeString("hr-HR", { hour: "2-digit", minute: "2-digit" })))
+    .catch(err => setSync("Greška pri spremanju: " + err.message)), 600);
+}
+/* Primijeni podatke koji su stigli s drugog uređaja, bez prekidanja tipkanja */
+function applyRemote(remote) {
+  const merged = { ...defaults(), ...remote };
+  if (JSON.stringify(merged) === JSON.stringify(data)) return;
+  if ((merged.updatedAt || 0) < (data.updatedAt || 0)) { pushToCloud(); return; } // lokalno je novije → pošalji
+  data = merged;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const ae = document.activeElement;
+  if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) { render(); ae.addEventListener("blur", writeInputs, { once: true }); }
+  else writeInputs();
+  render();
+  setSync("☁️ Ažurirano s drugog uređaja");
 }
 function loadLocal() {
   try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) data = { ...defaults(), ...JSON.parse(raw) }; }
@@ -308,23 +328,37 @@ function initFirebase() {
   try {
     firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.firestore(); firebaseReady = true;
+    db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); // offline cache, radi i bez mreže
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+    firebase.auth().getRedirectResult().catch(err => setSync("Prijava nije uspjela: " + err.message));
     firebase.auth().onAuthStateChanged(u => {
       user = u;
       const btn = $("auth-btn");
+      if (unsubCloud) { unsubCloud(); unsubCloud = null; }
       if (u) {
         btn.innerHTML = (u.photoURL ? `<img class="user-avatar" src="${u.photoURL}" alt=""/>` : "") + "Odjava";
-        db.collection("users").doc(u.uid).get().then(snap => {
-          if (snap.exists) { data = { ...defaults(), ...snap.data() }; localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); writeInputs(); render(); setSync("☁️ Sinkronizirano s Cloudom"); }
-          else saveData();
+        setSync("☁️ Povezujem…");
+        const ref = db.collection("users").doc(u.uid);
+        ref.get().then(snap => {
+          if (!snap.exists) { data.updatedAt = data.updatedAt || Date.now(); pushToCloud(); }
+          // real-time: svaka promjena na bilo kojem uređaju odmah stiže ovdje
+          unsubCloud = ref.onSnapshot({ includeMetadataChanges: false }, s => {
+            if (!s.exists || s.metadata.hasPendingWrites) return;
+            applyRemote(s.data());
+            if (!s.metadata.fromCache) setSync("☁️ Sinkronizirano · " + new Date().toLocaleTimeString("hr-HR", { hour: "2-digit", minute: "2-digit" }));
+          }, err => setSync("Greška sinkronizacije: " + err.message));
         }).catch(err => setSync("Greška pri učitavanju: " + err.message));
-      } else { btn.textContent = "Prijava"; setSync("Podaci se spremaju lokalno. Prijavi se za Cloud."); }
+      } else { btn.textContent = "Prijava"; setSync("Podaci se spremaju lokalno. Prijavi se za sinkronizaciju."); }
     });
+    window.addEventListener("online", () => { if (user) pushToCloud(); });
   } catch (e) { setSync("Cloud nedostupan: " + e.message); }
 }
 function toggleAuth() {
   if (!firebaseReady) { setSync("Cloud nije konfiguriran – upiši FIREBASE_CONFIG u index.html."); return; }
   if (user) { firebase.auth().signOut(); return; }
   const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  if (isMobile() || isStandalone()) { firebase.auth().signInWithRedirect(provider); return; }
   firebase.auth().signInWithPopup(provider).catch(err => {
     if (err.code === "auth/popup-blocked" || err.code === "auth/operation-not-supported-in-this-environment") firebase.auth().signInWithRedirect(provider);
     else setSync("Prijava nije uspjela: " + err.message);
@@ -338,6 +372,10 @@ function exportData() {
   a.download = "esmoker-podaci.json"; a.click();
 }
 function resetData() { if (!confirm("Obrisati sve podatke?")) return; data = defaults(); localStorage.removeItem(STORAGE_KEY); writeInputs(); saveData(); }
+function syncNow() {
+  if (!user) { toggleAuth(); return; }
+  pushToCloud();
+}
 
 /* ===== START ===== */
 $("hdr-date").textContent = new Date().toLocaleDateString("hr-HR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
