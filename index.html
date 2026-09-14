@@ -342,10 +342,13 @@ function initFirebase() {
         ref.get().then(snap => {
           if (!snap.exists) { data.updatedAt = data.updatedAt || Date.now(); pushToCloud(); }
           // real-time: svaka promjena na bilo kojem uređaju odmah stiže ovdje
-          unsubCloud = ref.onSnapshot({ includeMetadataChanges: false }, s => {
-            if (!s.exists || s.metadata.hasPendingWrites) return;
-            applyRemote(s.data());
-            if (!s.metadata.fromCache) setSync("☁️ Sinkronizirano · " + new Date().toLocaleTimeString("hr-HR", { hour: "2-digit", minute: "2-digit" }));
+          // includeMetadataChanges: true → dobijemo i događaj kad snapshot prijeđe iz cachea na server,
+          // inače "Povezujem…" ostane zauvijek kad su lokalni i cloud podaci identični
+          unsubCloud = ref.onSnapshot({ includeMetadataChanges: true }, s => {
+            if (s.metadata.hasPendingWrites) return;
+            if (s.exists) applyRemote(s.data());
+            if (s.metadata.fromCache) setSync("☁️ Lokalna kopija · čekam vezu…");
+            else setSync("☁️ Sinkronizirano · " + new Date().toLocaleTimeString("hr-HR", { hour: "2-digit", minute: "2-digit" }));
           }, err => setSync("Greška sinkronizacije: " + err.message));
         }).catch(err => setSync("Greška pri učitavanju: " + err.message));
       } else { btn.textContent = "Prijava"; setSync("Podaci se spremaju lokalno. Prijavi se za sinkronizaciju."); }
