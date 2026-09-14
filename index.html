@@ -124,10 +124,8 @@
       </div>
       
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">Potrošeno (Vape)</div><div class="stat-value" id="d-spent-total">0.00 €</div></div>
         <div class="stat-card"><div class="stat-label">Dnevno (ml)</div><div class="stat-value" id="d-ml-day">—</div></div>
-        <div class="stat-card"><div class="stat-label">Da pušim / dan</div><div class="stat-value" id="d-would-day">0.00 €</div></div>
-        <div class="stat-card"><div class="stat-label">Dnevno (Vape €)</div><div class="stat-value" id="d-vape-day-eur">0.00 €</div></div>
+        <div class="stat-card"><div class="stat-label">Dnevno (Vape €)</div><div class="stat-value" id="d-vape-day-eur">0,000 €</div></div>
       </div>
       
       <div class="card">
@@ -259,6 +257,7 @@ const setSync = msg => { $("sync-msg").textContent = msg; };
 
 /* ===== IZRAČUN ===== */
 const fmt = n => n.toFixed(2).replace(".", ",") + " €";
+const fmt3 = (n, unit) => n.toFixed(3).replace(".", ",") + " " + unit;
 function daysSince(s) { const d = new Date(s + "T00:00:00"); return isNaN(d) ? 0 : Math.max(0, Math.floor((Date.now() - d) / 86400000)); }
 function render() {
   const days = daysSince(data.start);
@@ -270,10 +269,8 @@ function render() {
 
   $("d-saved").textContent = (saved >= 0 ? "+" : "") + fmt(saved);
   $("d-days").textContent = days + (days === 1 ? " dan" : " dana") + " e-pušenja";
-  $("d-spent-total").textContent = fmt(spent);
-  $("d-ml-day").textContent = days && data.ml ? (data.ml / days).toFixed(1).replace(".", ",") + " ml" : "—";
-  $("d-would-day").textContent = fmt(wouldDay);
-  $("d-vape-day-eur").textContent = fmt(spentDay);
+  $("d-ml-day").textContent = days && data.ml ? fmt3(data.ml / days, "ml") : "—";
+  $("d-vape-day-eur").textContent = fmt3(spentDay, "€");
   $("d-saved-day").textContent = fmt(savedDay);
   $("d-saved-year").textContent = Math.round(savedDay * 365) + " €";
   $("d-would-total").textContent = fmt(wouldTotal);
