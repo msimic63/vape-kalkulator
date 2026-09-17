@@ -340,10 +340,45 @@ function renderHeaterDays() {
 }
 
 /* ===== PRIJAVA ===== */
+/* Firebase SDK: primarno s gstatic.com (script tagovi u <head>), rezerva jsDelivr */
+const FB_VER = "10.12.2";
+const FB_CDNS = ["https://www.gstatic.com/firebasejs/" + FB_VER + "/", "https://cdn.jsdelivr.net/npm/firebase@" + FB_VER + "/"];
+let firebaseError = "", firebaseInitRunning = null;
+const sdkReady = () => typeof firebase !== "undefined" && !!firebase.initializeApp && !!firebase.auth && !!firebase.firestore;
+const loadScript = src => new Promise((res, rej) => {
+  const el = document.createElement("script");
+  const t = setTimeout(() => rej(new Error("isteklo vrijeme za " + src)), 15000);
+  el.src = src;
+  el.onload = () => { clearTimeout(t); res(); };
+  el.onerror = () => { clearTimeout(t); rej(new Error("ne mogu učitati " + src)); };
+  document.head.appendChild(el);
+});
+async function ensureFirebaseSdk() {
+  if (sdkReady()) return;
+  let lastErr = null;
+  for (const base of FB_CDNS) {
+    try {
+      for (const lib of ["app", "auth", "firestore"]) await loadScript(base + "firebase-" + lib + "-compat.js");
+      if (sdkReady()) return;
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error("Firebase biblioteka se nije učitala");
+}
 function initFirebase() {
-  if (!FIREBASE_CONFIG.apiKey || typeof firebase === "undefined") return;
+  if (firebaseReady) return Promise.resolve();
+  if (!firebaseInitRunning) firebaseInitRunning = initFirebaseInner().finally(() => { firebaseInitRunning = null; });
+  return firebaseInitRunning;
+}
+async function initFirebaseInner() {
+  if (!FIREBASE_CONFIG.apiKey) { firebaseError = "Cloud nije konfiguriran – upiši FIREBASE_CONFIG u index.html."; return; }
+  if (location.protocol === "file:") { firebaseError = "App je otvoren kao lokalna datoteka – prijava radi samo kad je app na hostingu (https)."; setSync(firebaseError); return; }
+  try { await ensureFirebaseSdk(); }
+  catch (e) {
+    firebaseError = "Firebase biblioteka se nije učitala (" + e.message + "). Provjeri internet, blokator reklama / privatni DNS ili service worker (sw.js).";
+    setSync(firebaseError); return;
+  }
   try {
-    firebase.initializeApp(FIREBASE_CONFIG);
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.firestore(); firebaseReady = true;
     db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); // offline cache, radi i bez mreže
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
@@ -394,10 +429,18 @@ function initFirebase() {
       } else { btn.textContent = "Prijava"; setSync("Podaci se spremaju lokalno. Prijavi se za sinkronizaciju."); }
     });
     window.addEventListener("online", () => { if (user) pushToCloud(); });
-  } catch (e) { setSync("Cloud nedostupan: " + e.message); }
+  } catch (e) { firebaseError = "Cloud nedostupan: " + e.message; setSync(firebaseError); }
 }
 function toggleAuth() {
-  if (!firebaseReady) { setSync("Cloud nije konfiguriran – upiši FIREBASE_CONFIG u index.html."); return; }
+  if (!firebaseReady) {
+    // pokušaj ponovno učitati Firebase (npr. mreža je tek proradila), pa javi stvarni razlog
+    setSync("Učitavam Firebase…");
+    initFirebase().then(() => {
+      if (firebaseReady) setSync("Firebase učitan – pritisni Prijava još jednom.");
+      else setSync(firebaseError || "Firebase nije dostupan.");
+    });
+    return;
+  }
   if (user) { if (confirm("Odjaviti se? Podaci ostaju spremljeni u cloudu.")) firebase.auth().signOut(); return; }
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
