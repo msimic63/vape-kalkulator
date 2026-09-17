@@ -246,7 +246,7 @@ function writeInputs() {
 function saveData() {
   readInputs();
   data.updatedAt = Date.now();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  lsSet(STORAGE_KEY, JSON.stringify(data));
   render();
   pushToCloud();
 }
@@ -268,7 +268,7 @@ function applyRemote(remote) {
 /* Preuzmi cloud podatke bez obzira na vrijeme izmjene */
 function adoptCloud(remote) {
   data = { ...defaults(), ...remote };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  lsSet(STORAGE_KEY, JSON.stringify(data));
   const ae = document.activeElement;
   if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) { render(); ae.addEventListener("blur", writeInputs, { once: true }); }
   else writeInputs();
@@ -364,6 +364,22 @@ async function ensureFirebaseSdk() {
   }
   throw lastErr || new Error("Firebase biblioteka se nije učitala");
 }
+/* Firebase Auth radi samo na http/https stranici s dostupnim localStorage i sessionStorage */
+function envProblem() {
+  const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+  if (!/^https?:$/.test(location.protocol))
+    return "Prijava ne radi ovdje: app je otvoren kao \"" + location.protocol + "\" (pregled datoteke, upravitelj datoteka ili chat). Otvori app preko https adrese na hostingu.";
+  try {
+    const k = "__esmoker_test";
+    localStorage.setItem(k, "1"); localStorage.removeItem(k);
+    sessionStorage.setItem(k, "1"); sessionStorage.removeItem(k);
+  } catch (e) {
+    return inFrame
+      ? "Prijava ne radi ovdje: app je otvoren unutar okvira (pregled) koji blokira spremanje podataka. Otvori app izravno u pregledniku preko https adrese."
+      : "Preglednik blokira spremanje podataka za ovu stranicu (npr. uključeno \"Blokiraj sve kolačiće\"). Dozvoli kolačiće/podatke web-mjesta za ovu adresu pa osvježi app.";
+  }
+  return "";
+}
 function initFirebase() {
   if (firebaseReady) return Promise.resolve();
   if (!firebaseInitRunning) firebaseInitRunning = initFirebaseInner().finally(() => { firebaseInitRunning = null; });
@@ -371,7 +387,8 @@ function initFirebase() {
 }
 async function initFirebaseInner() {
   if (!FIREBASE_CONFIG.apiKey) { firebaseError = "Cloud nije konfiguriran – upiši FIREBASE_CONFIG u index.html."; return; }
-  if (location.protocol === "file:") { firebaseError = "App je otvoren kao lokalna datoteka – prijava radi samo kad je app na hostingu (https)."; setSync(firebaseError); return; }
+  const env = envProblem();
+  if (env) { firebaseError = env; setSync(env); return; }
   try { await ensureFirebaseSdk(); }
   catch (e) {
     firebaseError = "Firebase biblioteka se nije učitala (" + e.message + "). Provjeri internet, blokator reklama / privatni DNS ili service worker (sw.js).";
@@ -444,7 +461,9 @@ function toggleAuth() {
   if (user) { if (confirm("Odjaviti se? Podaci ostaju spremljeni u cloudu.")) firebase.auth().signOut(); return; }
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  const fail = err => setSync("Prijava nije uspjela (" + (err.code || "?") + "): " + err.message);
+  const fail = err => setSync(err.code === "auth/operation-not-supported-in-this-environment"
+    ? (envProblem() || "Prijava ne radi u ovom okruženju (" + location.origin + "). Otvori app izravno u pregledniku preko https adrese, ne iz pregleda, aplikacije za datoteke ili ugrađenog preglednika (Facebook, Instagram…).")
+    : "Prijava nije uspjela (" + (err.code || "?") + "): " + err.message);
   const viaRedirect = () => {
     ssSet(REDIRECT_KEY, "1");
     firebase.auth().signInWithRedirect(provider).catch(err => { ssSet(REDIRECT_KEY, null); fail(err); });
@@ -471,7 +490,7 @@ function resetData() {
   const msg = user ? "Obrisati sve podatke?\n\nPrijavljen si – podaci će se obrisati i u CLOUDU i na svim uređajima. Preporuka: prvo Izvezi podatke (JSON)."
                    : "Obrisati sve podatke na ovom uređaju?";
   if (!confirm(msg)) return;
-  data = defaults(); localStorage.removeItem(STORAGE_KEY); writeInputs(); saveData();
+  data = defaults(); try { localStorage.removeItem(STORAGE_KEY); } catch (e) {} writeInputs(); saveData();
 }
 function importData(input) {
   const file = input.files && input.files[0]; input.value = "";
