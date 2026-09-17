@@ -180,6 +180,8 @@
       <div class="card">
         <div class="card-title">🗂️ Podaci</div>
         <button class="btn" type="button" onclick="exportData()">Izvezi podatke (JSON)</button>
+        <button class="btn" type="button" onclick="document.getElementById('import-file').click()">Uvezi podatke (JSON)</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden onchange="importData(this)"/>
         <button class="btn danger" type="button" onclick="resetData()">Obriši sve podatke</button>
       </div>
     </div>
@@ -190,15 +192,22 @@
 /* ===== FIREBASE (opcionalno) =====
    Upiši podatke iz Firebase konzole (Project settings → Your apps → Web).
    Dok je apiKey prazan, app radi samo lokalno; tabovi i sve ostalo rade normalno. */
+/* Ako je app na Firebase Hostingu (*.web.app / *.firebaseapp.com), prijava ide preko ISTE domene.
+   Inače preglednici (Safari, Firefox, novi Chrome) blokiraju pristup storageu firebaseapp.com
+   pa se nakon Google prijave vratiš u app – neprijavljen. */
+const SAME_ORIGIN_AUTH = /\.(web\.app|firebaseapp\.com)$/.test(location.hostname);
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAxQCJ_j-qE5kNukhUy7t7EWpQjnsEApbA",
-  authDomain: "vape-kalkulator.firebaseapp.com",
+  authDomain: SAME_ORIGIN_AUTH ? location.hostname : "vape-kalkulator.firebaseapp.com",
   projectId: "vape-kalkulator",
   storageBucket: "vape-kalkulator.firebasestorage.app",
   messagingSenderId: "334042935965",
   appId: "1:334042935965:web:7b2f6478907f72c9dc9a74"
 };
 const STORAGE_KEY = "esmoker-data";
+const UID_KEY = "esmoker-uid";              // s kojim je računom ovaj uređaj zadnji put sinkroniziran
+const REDIRECT_KEY = "esmoker-auth-pending"; // označava da je pokrenuta redirect prijava
+const REDIRECT_FAILED_KEY = "esmoker-redirect-failed"; // redirect na ovom uređaju ne radi → koristi popup
 
 /* ===== STANJE ===== */
 const defaults = () => ({
@@ -254,7 +263,11 @@ function applyRemote(remote) {
   const merged = { ...defaults(), ...remote };
   if (JSON.stringify(merged) === JSON.stringify(data)) return;
   if ((merged.updatedAt || 0) < (data.updatedAt || 0)) { pushToCloud(); return; } // lokalno je novije → pošalji
-  data = merged;
+  adoptCloud(merged);
+}
+/* Preuzmi cloud podatke bez obzira na vrijeme izmjene */
+function adoptCloud(remote) {
+  data = { ...defaults(), ...remote };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   const ae = document.activeElement;
   if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) { render(); ae.addEventListener("blur", writeInputs, { once: true }); }
@@ -262,6 +275,10 @@ function applyRemote(remote) {
   render();
   setSync("☁️ Ažurirano s drugog uređaja");
 }
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+const ssGet = k => { try { return sessionStorage.getItem(k); } catch (e) { return null; } };
+const ssSet = (k, v) => { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} };
 function loadLocal() {
   try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) data = { ...defaults(), ...JSON.parse(raw) }; }
   catch (e) { data = defaults(); }
@@ -330,7 +347,16 @@ function initFirebase() {
     db = firebase.firestore(); firebaseReady = true;
     db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); // offline cache, radi i bez mreže
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
-    firebase.auth().getRedirectResult().catch(err => setSync("Prijava nije uspjela (" + (err.code || "?") + "): " + err.message));
+    const redirectPending = ssGet(REDIRECT_KEY); ssSet(REDIRECT_KEY, null);
+    firebase.auth().getRedirectResult()
+      .then(res => {
+        // Vratili smo se s Googlea, a korisnik nije prijavljen → preglednik je blokirao cross-site storage
+        if (redirectPending && !(res && res.user) && !firebase.auth().currentUser) {
+          lsSet(REDIRECT_FAILED_KEY, "1");
+          setSync("Google prijava se vratila bez korisnika (preglednik blokira kolačiće treće strane). Pritisni Prijava ponovno – sad ide preko popup prozora.");
+        }
+      })
+      .catch(err => setSync("Prijava nije uspjela (" + (err.code || "?") + "): " + err.message));
     firebase.auth().onAuthStateChanged(u => {
       user = u;
       const btn = $("auth-btn");
@@ -339,8 +365,22 @@ function initFirebase() {
         btn.innerHTML = (u.photoURL ? `<img class="user-avatar" src="${u.photoURL}" alt=""/>` : "") + "Odjava";
         setSync("☁️ Povezujem…");
         const ref = db.collection("users").doc(u.uid);
-        ref.get().then(snap => {
+        const firstLoginHere = lsGet(UID_KEY) !== u.uid; // npr. nakon brisanja podataka preglednika
+        ref.get({ source: firstLoginHere ? "server" : "default" }).then(snap => {
           if (!snap.exists) { data.updatedAt = data.updatedAt || Date.now(); pushToCloud(); }
+          else if (firstLoginHere) {
+            // Prva prijava na ovom uređaju: cloud je izvor istine. Lokalni podaci smiju ga
+            // prepisati samo ako korisnik to izričito odabere.
+            const remote = { ...defaults(), ...snap.data() };
+            const localTouched = !!data.updatedAt && JSON.stringify(remote) !== JSON.stringify(data);
+            const keepLocal = localTouched && !confirm(
+              "U cloudu postoje spremljeni podaci za ovaj račun.\n\n" +
+              "U redu = učitaj podatke iz clouda (preporučeno)\n" +
+              "Odustani = zadrži podatke s ovog uređaja i PREPIŠI cloud");
+            if (keepLocal) { data.updatedAt = Date.now(); pushToCloud(); }
+            else { adoptCloud(remote); setSync("☁️ Podaci učitani iz clouda"); }
+          }
+          lsSet(UID_KEY, u.uid);
           // real-time: svaka promjena na bilo kojem uređaju odmah stiže ovdje
           // includeMetadataChanges: true → dobijemo i događaj kad snapshot prijeđe iz cachea na server,
           // inače "Povezujem…" ostane zauvijek kad su lokalni i cloud podaci identični
@@ -350,7 +390,7 @@ function initFirebase() {
             if (s.metadata.fromCache) setSync("☁️ Lokalna kopija · čekam vezu…");
             else setSync("☁️ Sinkronizirano · " + new Date().toLocaleTimeString("hr-HR", { hour: "2-digit", minute: "2-digit" }));
           }, err => setSync("Greška sinkronizacije: " + err.message));
-        }).catch(err => setSync("Greška pri učitavanju: " + err.message));
+        }).catch(err => setSync("Greška pri učitavanju: " + err.message + " – otvori app ponovno kad budeš online."));
       } else { btn.textContent = "Prijava"; setSync("Podaci se spremaju lokalno. Prijavi se za sinkronizaciju."); }
     });
     window.addEventListener("online", () => { if (user) pushToCloud(); });
@@ -358,16 +398,22 @@ function initFirebase() {
 }
 function toggleAuth() {
   if (!firebaseReady) { setSync("Cloud nije konfiguriran – upiši FIREBASE_CONFIG u index.html."); return; }
-  if (user) { firebase.auth().signOut(); return; }
+  if (user) { if (confirm("Odjaviti se? Podaci ostaju spremljeni u cloudu.")) firebase.auth().signOut(); return; }
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
   const fail = err => setSync("Prijava nije uspjela (" + (err.code || "?") + "): " + err.message);
-  // Popup prvo (na mobitelu se otvara kao nova kartica) – redirect je rezerva jer ga mobilni preglednici blokiraju zbog third-party kolačića
-  if (isStandalone()) { firebase.auth().signInWithRedirect(provider).catch(fail); return; }
+  const viaRedirect = () => {
+    ssSet(REDIRECT_KEY, "1");
+    firebase.auth().signInWithRedirect(provider).catch(err => { ssSet(REDIRECT_KEY, null); fail(err); });
+  };
+  // Redirect je pouzdan samo kad je auth na istoj domeni kao app (SAME_ORIGIN_AUTH).
+  // U svim ostalim slučajevima popup prvo, redirect samo kao rezerva.
+  if (isStandalone() && SAME_ORIGIN_AUTH && !lsGet(REDIRECT_FAILED_KEY)) { viaRedirect(); return; }
   setSync("Otvaram Google prijavu…");
   firebase.auth().signInWithPopup(provider).catch(err => {
-    if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/cancelled-popup-request", "auth/popup-closed-by-user"].includes(err.code))
-      firebase.auth().signInWithRedirect(provider).catch(fail);
+    const popupProblem = ["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/cancelled-popup-request", "auth/popup-closed-by-user"].includes(err.code);
+    if (popupProblem && !lsGet(REDIRECT_FAILED_KEY)) viaRedirect();
+    else if (popupProblem) setSync("Popup prijava nije dovršena (" + err.code + "). Dozvoli skočne prozore za ovu stranicu ili otvori app u pregledniku i prijavi se tamo.");
     else fail(err);
   });
 }
@@ -378,7 +424,25 @@ function exportData() {
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
   a.download = "esmoker-podaci.json"; a.click();
 }
-function resetData() { if (!confirm("Obrisati sve podatke?")) return; data = defaults(); localStorage.removeItem(STORAGE_KEY); writeInputs(); saveData(); }
+function resetData() {
+  const msg = user ? "Obrisati sve podatke?\n\nPrijavljen si – podaci će se obrisati i u CLOUDU i na svim uređajima. Preporuka: prvo Izvezi podatke (JSON)."
+                   : "Obrisati sve podatke na ovom uređaju?";
+  if (!confirm(msg)) return;
+  data = defaults(); localStorage.removeItem(STORAGE_KEY); writeInputs(); saveData();
+}
+function importData(input) {
+  const file = input.files && input.files[0]; input.value = "";
+  if (!file) return;
+  file.text().then(txt => {
+    const parsed = JSON.parse(txt);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("neispravan format");
+    if (!confirm("Zamijeniti trenutne podatke podacima iz datoteke?" + (user ? " (spremit će se i u cloud)" : ""))) return;
+    data = { ...defaults(), ...parsed };
+    if (!Array.isArray(data.heaters)) data.heaters = [];
+    writeInputs(); saveData();
+    setSync("✅ Podaci uvezeni iz datoteke" + (user ? " – spremam u cloud…" : ""));
+  }).catch(err => setSync("Uvoz nije uspio: " + err.message));
+}
 function syncNow() {
   if (!user) { toggleAuth(); return; }
   pushToCloud();
