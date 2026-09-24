@@ -135,7 +135,15 @@
           <div class="bar-track"><div class="bar-fill" id="bar-smoke" style="width:100%;background:linear-gradient(90deg, #0066ff, #00d2ff)"></div></div>
         </div>
         <div class="bar-wrap">
-          <div class="bar-header"><span>💨 E-cigarete</span><span id="d-bar-vape-val">0.00 €</span></div>
+          <div class="bar-header"><span>💨 E-cigarete</span><span id="d-bar-ecig-val">0.00 €</span></div>
+          <div class="bar-track"><div class="bar-fill" id="bar-ecig" style="width:0%;background:linear-gradient(90deg, #8a2be2, #c77dff)"></div></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-header"><span>🚬 Cigarete</span><span id="d-bar-cig-val">0.00 €</span></div>
+          <div class="bar-track"><div class="bar-fill" id="bar-cig" style="width:0%;background:linear-gradient(90deg, #ff8c00, #ffc300)"></div></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-header"><span>💸 Potrošeno</span><span id="d-bar-vape-val">0.00 €</span></div>
           <div class="bar-track"><div class="bar-fill" id="bar-vape" style="width:0%;background:linear-gradient(90deg, #ff007f, #ff5252)"></div></div>
         </div>
       </div>
@@ -306,6 +314,10 @@ function render() {
   const max = Math.max(wouldTotal, spent, 0.01);
   $("bar-smoke").style.width = (wouldTotal / max * 100) + "%";
   $("bar-vape").style.width = (spent / max * 100) + "%";
+  $("d-bar-ecig-val").textContent = fmt(data.hardware);
+  $("d-bar-cig-val").textContent = fmt(data.liquids);
+  $("bar-ecig").style.width = (Math.max(0, data.hardware) / max * 100) + "%";
+  $("bar-cig").style.width = (Math.max(0, data.liquids) / max * 100) + "%";
   $("h-limit-txt").textContent = data.heaterLimit;
   $("h-limit2-txt").textContent = data.heaterLimit2;
   renderHeaterDays();
